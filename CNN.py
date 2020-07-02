@@ -22,7 +22,7 @@ def bias_variable(shape):
     return tf.Variable(initial)
 
 
-# 定义卷积 conv2d是tf中的二维卷积函数，x是图片的所有参数  W是此卷积层的权重，然后定义步长
+# 定义卷积 conv2d是tf中的二维卷积函数，x是图片的所有参数  W是此卷积核，然后定义步长
 # strides=[1,1,1,1] strides[0]和strides[3] 的两个1是默认值 中间两个一 代表在x方向运动1步  在y方向运动1步
 # padding same表示卷积计算时会在张量周围补0  valid表示不会
 # SAME方式抽取后 和原图片大小一样 VALID方式抽取后比原图像要小
@@ -63,39 +63,40 @@ h_pool2 = max_pool_2x2(h_conv2)  # no.2 池化层   out size 7x7x64
 # 全连接层
 W_fc1 = weight_variable([7 * 7 * 64, 1024])
 b_fc1 = bias_variable([1024])
-h_pool2_flat = tf.reshape(h_pool2, [-1, 7 * 7 * 64])  # reshape成向量
+h_pool2_flat = tf.reshape(h_pool2, [-1, 7 * 7 * 64])  # reshape成向量  将其变成一个一维数组
 h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)  # 第一个全连接层
 
 # dropout层
 keep_prob = tf.placeholder(tf.float32)
 h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
-# softmax层
+# softmax层  类别预测和输出
 W_fc2 = weight_variable([1024, 10])
 b_fc2 = bias_variable([10])
 prediction = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
 
+# 模型评价
 # the error between prediction and real data
+# 交叉熵代价函数计算
 cross_entropy = tf.reduce_mean(-tf.reduce_sum(ys * tf.log(prediction),
                                               reduction_indices=[1]))  # loss
+# 优化算法优化使得代价函数最小化
 train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
-correct_prediction = tf.equal(tf.argmax(prediction, 1), tf.argmax(prediction, 1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))  # 精确度计算
-
-
-def compute_accuracy(v_xs, v_ys):
-    global prediction
-    y_pre = sess.run(prediction, feed_dict={xs: v_xs, keep_prob: 1})
-    correct_prediction = tf.equal(tf.argmax(y_pre, 1), tf.argmax(v_ys, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    result = sess.run(accuracy, feed_dict={xs: v_xs, ys: v_ys, keep_prob: 1})
-    return result
-
 
 # run network
 sess = tf.Session()
 init = tf.global_variables_initializer()
 sess.run(init)
+
+def compute_accuracy(v_xs, v_ys):
+    global prediction
+    y_pre = sess.run(prediction, feed_dict={xs: v_xs, keep_prob: 1})
+    # 找出预测的正确标签
+    correct_prediction = tf.equal(tf.argmax(y_pre, 1), tf.argmax(v_ys, 1))
+    # 正确个数除以总数得到准确率
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    result = sess.run(accuracy, feed_dict={xs: v_xs, ys: v_ys, keep_prob: 1})
+    return result
 
 for i in range(10000):
     batch_xs, batch_ys = mnist.train.next_batch(100)
