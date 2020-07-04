@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-# placeholder 是tensorflow中的占位符，用来暂时存储变量
+# placeholder是tensorflow中的占位符，用来暂时存储变量
 # tensorflow 如果想要从外部传入data
 # 就需要用到tf.placeholder()  然后以sess.run(***,feed_dict={input: **})
 
